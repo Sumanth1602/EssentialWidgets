@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Essential Widgets</string>
+    <string name="widget_name">Now + 3.5h</string>
+    <string name="widget_description">Calculate the time 3.5 hours from now with a single tap</string>
+</resources>

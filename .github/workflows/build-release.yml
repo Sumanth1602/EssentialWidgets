@@ -1,0 +1,67 @@
+name: Build & Publish Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Build release (unsigned) APK
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Align & Sign APK
+        run: |
+          BUILD_TOOLS=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -n 1)
+          ZIPALIGN=$BUILD_TOOLS/zipalign
+          APKSIGNER=$BUILD_TOOLS/apksigner
+
+          $ZIPALIGN -p 4 app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-aligned.apk
+
+          keytool -genkeypair \
+            -alias essentialwidgets \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=EssentialWidgets, OU=Dev, O=EssentialWidgets, L=Internet, S=NA, C=US" \
+            -keystore /tmp/essentialwidgets.keystore
+
+          $APKSIGNER sign \
+            --ks /tmp/essentialwidgets.keystore \
+            --ks-key-alias essentialwidgets \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --out app/build/outputs/apk/release/EssentialWidgets-${{ github.ref_name }}.apk \
+            app/build/outputs/apk/release/app-release-aligned.apk
+
+      # Create the Release in GitHub
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          files: app/build/outputs/apk/release/EssentialWidgets-${{ github.ref_name }}.apk
+          generate_release_notes: true
+          make_latest: true
