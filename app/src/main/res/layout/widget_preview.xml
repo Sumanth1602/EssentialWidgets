@@ -3,61 +3,41 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:gravity="center_vertical"
+    android:gravity="center"
     android:orientation="horizontal"
-    android:paddingHorizontal="12dp"
-    android:paddingVertical="8dp">
+    android:padding="12dp">
 
-    <!-- Left - Ready at -->
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Ready at"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="Adds time to\ncurrent time"
         android:textColor="#1E1E1E"
         android:textSize="13sp" />
 
-    <View
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_weight="0.3" />
-
-    <!-- Center - Time pill -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/time_pill_background"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
-        android:text="11:00 PM"
-        android:textColor="#1E1E1E"
-        android:textSize="15sp"
-        android:textStyle="bold" />
-
-    <View
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_weight="0.3" />
-
-    <!-- Right - From time & time left -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="end"
-        android:orientation="vertical">
+        android:background="@drawable/button_background"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="12dp">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_touch_app" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="From 7:30 PM"
-            android:textColor="#666666"
-            android:textSize="11sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="3h 30m left"
-            android:textColor="#666666"
-            android:textSize="11sp" />
+            android:layout_marginStart="6dp"
+            android:text="NOW"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 

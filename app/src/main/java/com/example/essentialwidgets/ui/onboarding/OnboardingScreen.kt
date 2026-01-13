@@ -4,12 +4,14 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,13 +27,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccessTime
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,33 +44,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.essentialwidgets.R
 import com.example.essentialwidgets.data.PreferencesManager
 import com.example.essentialwidgets.ui.theme.ExpressiveButtonShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 data class OnboardingPage(
-    val icon: ImageVector,
+    @DrawableRes val iconRes: Int,
     val title: String,
     val description: String
 )
 
 val onboardingPages = listOf(
     OnboardingPage(
-        icon = Icons.Rounded.Widgets,
+        iconRes = R.drawable.ic_widgets,
         title = "Essential Widgets",
         description = "Beautiful, expressive widgets designed for your home screen. Customize and add them with a single tap."
     ),
     OnboardingPage(
-        icon = Icons.Rounded.AccessTime,
+        iconRes = R.drawable.ic_access_time,
         title = "Time Calculator",
-        description = "Plan ahead with our Now+3.5h widget. Perfect for knowing when your task will be done or when to leave."
+        description = "Plan ahead with our time widget. Perfect for knowing when your task will be done or when to leave."
     ),
     OnboardingPage(
-        icon = Icons.Rounded.Notifications,
+        iconRes = R.drawable.ic_notifications,
         title = "Stay Updated",
         description = "Enable notifications to receive timely updates from your widgets."
     )
@@ -298,13 +297,13 @@ private fun OnboardingPageContent(
                     label = "icon_scale"
                 )
                 
-                Icon(
-                    imageVector = page.icon,
+                Image(
+                    painter = painterResource(id = page.iconRes),
                     contentDescription = null,
                     modifier = Modifier
                         .size(80.dp)
                         .scale(scale),
-                    tint = MaterialTheme.colorScheme.primary
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                 )
             }
         }
@@ -342,4 +341,3 @@ private fun OnboardingPageContent(
         }
     }
 }
-

@@ -6,12 +6,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
@@ -29,8 +31,6 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.fillMaxWidth
-import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
@@ -42,6 +42,7 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.ColorFilter
 import com.example.essentialwidgets.R
+import com.example.essentialwidgets.data.WidgetPreferences
 import com.example.essentialwidgets.notification.AlarmScheduler
 import java.time.Instant
 import java.time.LocalDateTime
@@ -53,6 +54,15 @@ class NowTimeWidget : GlanceAppWidget() {
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
     
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Get duration from preferences and save to widget state
+        val hours = WidgetPreferences.getHours(context)
+        val minutes = WidgetPreferences.getMinutes(context)
+        
+        updateAppWidgetState(context, id) { prefs ->
+            prefs[DURATION_HOURS_KEY] = hours
+            prefs[DURATION_MINUTES_KEY] = minutes
+        }
+        
         provideContent {
             GlanceTheme {
                 NowTimeWidgetContent()
@@ -64,15 +74,21 @@ class NowTimeWidget : GlanceAppWidget() {
         val SHOW_RESULT_KEY = booleanPreferencesKey("show_result")
         val CALCULATED_TIME_KEY = longPreferencesKey("calculated_time")
         val CURRENT_TIME_KEY = longPreferencesKey("current_time")
+        val DURATION_HOURS_KEY = intPreferencesKey("duration_hours")
+        val DURATION_MINUTES_KEY = intPreferencesKey("duration_minutes")
     }
 }
 
 @Composable
 private fun NowTimeWidgetContent() {
+    val context = LocalContext.current
     val prefs = currentState<Preferences>()
     val showResult = prefs[NowTimeWidget.SHOW_RESULT_KEY] ?: false
     val calculatedTimeMillis = prefs[NowTimeWidget.CALCULATED_TIME_KEY] ?: 0L
     val currentTimeMillis = prefs[NowTimeWidget.CURRENT_TIME_KEY] ?: 0L
+    // Read from widget state, fallback to SharedPreferences
+    val durationHours = prefs[NowTimeWidget.DURATION_HOURS_KEY] ?: WidgetPreferences.getHours(context)
+    val durationMinutes = prefs[NowTimeWidget.DURATION_MINUTES_KEY] ?: WidgetPreferences.getMinutes(context)
     
     val formatter = DateTimeFormatter.ofPattern("h:mm a")
     val calculatedTime = if (calculatedTimeMillis > 0) {
@@ -108,6 +124,14 @@ private fun NowTimeWidgetContent() {
         }
     } else ""
     
+    // Format duration text for idle state
+    val durationText = when {
+        durationHours > 0 && durationMinutes > 0 -> "Adds ${durationHours}h ${durationMinutes}m to\ncurrent time"
+        durationHours > 0 -> "Adds ${durationHours}h to\ncurrent time"
+        durationMinutes > 0 -> "Adds ${durationMinutes}m to\ncurrent time"
+        else -> "Tap NOW"
+    }
+    
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -128,13 +152,13 @@ private fun NowTimeWidgetContent() {
                 timeLeftText = timeLeftText
             )
         } else {
-            IdleContent()
+            IdleContent(durationText = durationText)
         }
     }
 }
 
 @Composable
-private fun IdleContent() {
+private fun IdleContent(durationText: String) {
     Row(
         modifier = GlanceModifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -146,7 +170,7 @@ private fun IdleContent() {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Adds 3h 30m to\ncurrent time",
+                text = durationText,
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurface,
                     fontSize = 13.sp,
@@ -279,10 +303,16 @@ class NowTimeActionCallback : ActionCallback {
                 // Cancel scheduled notifications
                 AlarmScheduler.cancelNotifications(context)
             } else {
+                // Get duration from widget state (set during provideGlance)
+                val hours = prefs[NowTimeWidget.DURATION_HOURS_KEY] ?: WidgetPreferences.getHours(context)
+                val minutes = prefs[NowTimeWidget.DURATION_MINUTES_KEY] ?: WidgetPreferences.getMinutes(context)
+                
+                // Calculate duration in milliseconds
+                val durationMillis = ((hours * 60L) + minutes) * 60L * 1000L
+                
                 // Calculate and show result
                 val now = System.currentTimeMillis()
-                val threeAndHalfHoursInMillis = (3 * 60 + 30) * 60 * 1000L
-                val futureTime = now + threeAndHalfHoursInMillis
+                val futureTime = now + durationMillis
                 
                 prefs[NowTimeWidget.SHOW_RESULT_KEY] = true
                 prefs[NowTimeWidget.CALCULATED_TIME_KEY] = futureTime

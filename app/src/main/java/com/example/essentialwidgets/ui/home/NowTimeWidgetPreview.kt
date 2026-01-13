@@ -1,18 +1,18 @@
 package com.example.essentialwidgets.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.TouchApp
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,20 +24,49 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.essentialwidgets.R
+import com.example.essentialwidgets.data.WidgetPreferences
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun NowTimeWidgetPreview() {
+    val context = LocalContext.current
     var showResult by remember { mutableStateOf(false) }
     val currentTime = remember { LocalTime.now() }
-    val futureTime = remember { currentTime.plusHours(3).plusMinutes(30) }
+    
+    // Get configured duration
+    val hours = remember { WidgetPreferences.getHours(context) }
+    val minutes = remember { WidgetPreferences.getMinutes(context) }
+    val futureTime = remember { currentTime.plusHours(hours.toLong()).plusMinutes(minutes.toLong()) }
     val formatter = remember { DateTimeFormatter.ofPattern("h:mm a") }
+    
+    // Format duration text
+    val durationText = remember {
+        when {
+            hours > 0 && minutes > 0 -> "Adds ${hours}h ${minutes}m to\ncurrent time"
+            hours > 0 -> "Adds ${hours}h to\ncurrent time"
+            minutes > 0 -> "Adds ${minutes}m to\ncurrent time"
+            else -> "Tap NOW"
+        }
+    }
+    
+    val timeLeftText = remember {
+        when {
+            hours > 0 && minutes > 0 -> "${hours}h ${minutes}m left"
+            hours > 0 -> "${hours}h left"
+            minutes > 0 -> "${minutes}m left"
+            else -> ""
+        }
+    }
     
     // Animate between states for preview effect
     LaunchedEffect(Unit) {
@@ -50,8 +79,9 @@ fun NowTimeWidgetPreview() {
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         if (showResult) {
             // Result state: Ready at | Time pill | From X:XX / Xh left
@@ -62,8 +92,6 @@ fun NowTimeWidgetPreview() {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
-            Spacer(modifier = Modifier.width(8.dp))
             
             // Center - Time pill
             Box(
@@ -81,8 +109,6 @@ fun NowTimeWidgetPreview() {
                 )
             }
             
-            Spacer(modifier = Modifier.width(8.dp))
-            
             // Right - From time & time left
             Column(
                 horizontalAlignment = Alignment.End
@@ -94,7 +120,7 @@ fun NowTimeWidgetPreview() {
                     fontSize = 9.sp
                 )
                 Text(
-                    text = "3h 30m left",
+                    text = timeLeftText,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 9.sp
@@ -104,20 +130,13 @@ fun NowTimeWidgetPreview() {
             // Idle state: Description | NOW button
             
             // Left side - description
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Adds 3h 30m to\ncurrent time",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 14.sp
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = durationText,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Start,
+                lineHeight = 14.sp
+            )
             
             // Right side - NOW button
             Box(
@@ -129,11 +148,11 @@ fun NowTimeWidgetPreview() {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.TouchApp,
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_touch_app),
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(

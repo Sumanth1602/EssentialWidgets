@@ -9,8 +9,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,12 +41,9 @@ fun WidgetGridItem(
         label = "card_scale"
     )
     
-    val aspectRatio = widget.widthCells.toFloat() / widget.heightCells.toFloat()
-    
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(aspectRatio)
             .scale(scale)
             .clickable(
                 interactionSource = interactionSource,
@@ -66,14 +61,14 @@ fun WidgetGridItem(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+                .fillMaxWidth()
+                .padding(12.dp)
         ) {
             // Widget Preview Area
             Box(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
+                    .height(56.dp)
                     .clip(MaterialTheme.shapes.medium)
                     .background(
                         Brush.verticalGradient(
@@ -88,7 +83,7 @@ fun WidgetGridItem(
                 widget.previewContent()
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             // Widget Info
             Text(

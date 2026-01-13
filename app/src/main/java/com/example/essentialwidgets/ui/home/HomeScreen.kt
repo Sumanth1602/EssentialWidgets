@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.essentialwidgets.data.WidgetPreferences
 import com.example.essentialwidgets.ui.theme.BottomSheetShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -48,17 +49,6 @@ data class WidgetInfo(
     val previewContent: @Composable () -> Unit
 )
 
-val availableWidgets = listOf(
-    WidgetInfo(
-        id = "now_time",
-        name = "Now + 3.5h",
-        description = "Calculate time 3.5 hours from now",
-        widthCells = 2,
-        heightCells = 1,
-        previewContent = { NowTimeWidgetPreview() }
-    )
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen() {
@@ -68,6 +58,22 @@ fun HomeScreen() {
     val context = LocalContext.current
     
     var isVisible by remember { mutableStateOf(false) }
+    
+    // Get current duration for display
+    val durationText = remember { WidgetPreferences.getDurationText(context) }
+    
+    val availableWidgets = remember {
+        listOf(
+            WidgetInfo(
+                id = "now_time",
+                name = "Now + Time",
+                description = "Add custom time to current time with one tap",
+                widthCells = 2,
+                heightCells = 1,
+                previewContent = { NowTimeWidgetPreview() }
+            )
+        )
+    }
     
     LaunchedEffect(Unit) {
         delay(100)
@@ -109,7 +115,7 @@ fun HomeScreen() {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Tap a widget to add it to your home screen",
+                        text = "Tap a widget to configure and add to home screen",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -118,10 +124,9 @@ fun HomeScreen() {
             
             // Widget Grid
             LazyVerticalStaggeredGrid(
-                columns = StaggeredGridCells.Fixed(2),
+                columns = StaggeredGridCells.Fixed(1),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalItemSpacing = 12.dp
             ) {
                 item(span = StaggeredGridItemSpan.FullLine) {
@@ -193,4 +198,3 @@ fun HomeScreen() {
         }
     }
 }
-
