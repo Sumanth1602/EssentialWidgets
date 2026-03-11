@@ -328,7 +328,8 @@ private fun ProgressBar(progressFraction: Float, isComplete: Boolean) {
                         if (index < filledSegments) GlanceTheme.colors.primary
                         else GlanceTheme.colors.surfaceVariant
                     )
-            )
+            ) {
+            }
             if (index < segmentCount - 1) {
                 Spacer(modifier = GlanceModifier.width(3.dp))
             }
@@ -390,3 +391,4 @@ class NowTimeActionCallback : ActionCallback {
         NowTimeWidget().update(context, glanceId)
     }
 }
+

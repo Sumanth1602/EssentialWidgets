@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,14 +43,14 @@ fun NowTimeWidgetPreview() {
     val timeLeftText = remember { "1h 30m left" }
     val progressFraction = 0.62f
     val durationText = remember { "Adds 1h 30m to\ncurrent time" }
-    
+
     LaunchedEffect(Unit) {
         while (true) {
             delay(3000)
             showResult = !showResult
         }
     }
-    
+
     if (showResult) {
         Column(
             modifier = Modifier
@@ -61,10 +60,11 @@ fun NowTimeWidgetPreview() {
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.width(76.dp)
                 ) {
                     Text(
                         text = "Ready at",
@@ -89,9 +89,9 @@ fun NowTimeWidgetPreview() {
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 Column(
                     horizontalAlignment = Alignment.End
                 ) {
@@ -111,7 +111,7 @@ fun NowTimeWidgetPreview() {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(6.dp))
             PreviewProgressBar(progressFraction = progressFraction)
         }
@@ -130,7 +130,7 @@ fun NowTimeWidgetPreview() {
                 textAlign = TextAlign.Start,
                 lineHeight = 14.sp
             )
-            
+
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
@@ -164,15 +164,15 @@ fun NowTimeWidgetPreview() {
 private fun PreviewProgressBar(progressFraction: Float) {
     val segmentCount = 12
     val filledSegments = ceil(progressFraction * segmentCount).toInt().coerceIn(0, segmentCount)
-    
+
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         repeat(segmentCount) { index ->
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .width(7.dp)
                     .height(4.dp)
                     .clip(RoundedCornerShape(99.dp))
                     .background(
