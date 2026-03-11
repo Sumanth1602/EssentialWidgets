@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -40,7 +41,6 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import androidx.glance.ColorFilter
 import com.example.essentialwidgets.R
 import com.example.essentialwidgets.data.WidgetPreferences
 import com.example.essentialwidgets.notification.AlarmScheduler
@@ -86,12 +86,13 @@ private fun NowTimeWidgetContent() {
     val showResult = prefs[NowTimeWidget.SHOW_RESULT_KEY] ?: false
     val calculatedTimeMillis = prefs[NowTimeWidget.CALCULATED_TIME_KEY] ?: 0L
     val currentTimeMillis = prefs[NowTimeWidget.CURRENT_TIME_KEY] ?: 0L
+    val hasCalculatedTime = calculatedTimeMillis > 0L
     // Read from widget state, fallback to SharedPreferences
     val durationHours = prefs[NowTimeWidget.DURATION_HOURS_KEY] ?: WidgetPreferences.getHours(context)
     val durationMinutes = prefs[NowTimeWidget.DURATION_MINUTES_KEY] ?: WidgetPreferences.getMinutes(context)
     
     val formatter = DateTimeFormatter.ofPattern("h:mm a")
-    val calculatedTime = if (calculatedTimeMillis > 0) {
+    val calculatedTime = if (hasCalculatedTime) {
         LocalDateTime.ofInstant(
             Instant.ofEpochMilli(calculatedTimeMillis),
             ZoneId.systemDefault()
@@ -106,7 +107,7 @@ private fun NowTimeWidgetContent() {
     } else ""
     
     // Calculate time left
-    val timeLeftText = if (calculatedTimeMillis > 0) {
+    val timeLeftText = if (hasCalculatedTime) {
         val now = System.currentTimeMillis()
         val remainingMillis = calculatedTimeMillis - now
         if (remainingMillis > 0) {
@@ -145,7 +146,7 @@ private fun NowTimeWidgetContent() {
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (showResult && calculatedTime.isNotEmpty()) {
+        if (showResult && hasCalculatedTime) {
             ResultContent(
                 calculatedTime = calculatedTime,
                 currentTime = currentTime,
@@ -290,6 +291,8 @@ class NowTimeActionCallback : ActionCallback {
     ) {
         var targetTimeMillis = 0L
         var shouldScheduleNotifications = false
+        var shouldScheduleWidgetRefresh = false
+        var shouldCancelActiveTimer = false
         
         updateAppWidgetState(context, glanceId) { prefs ->
             val currentShowResult = prefs[NowTimeWidget.SHOW_RESULT_KEY] ?: false
@@ -299,9 +302,7 @@ class NowTimeActionCallback : ActionCallback {
                 prefs[NowTimeWidget.SHOW_RESULT_KEY] = false
                 prefs[NowTimeWidget.CALCULATED_TIME_KEY] = 0L
                 prefs[NowTimeWidget.CURRENT_TIME_KEY] = 0L
-                
-                // Cancel scheduled notifications
-                AlarmScheduler.cancelNotifications(context)
+                shouldCancelActiveTimer = true
             } else {
                 // Get duration from widget state (set during provideGlance)
                 val hours = prefs[NowTimeWidget.DURATION_HOURS_KEY] ?: WidgetPreferences.getHours(context)
@@ -318,15 +319,22 @@ class NowTimeActionCallback : ActionCallback {
                 prefs[NowTimeWidget.CALCULATED_TIME_KEY] = futureTime
                 prefs[NowTimeWidget.CURRENT_TIME_KEY] = now
                 
-                // Schedule notifications
+                // Schedule alarms
                 targetTimeMillis = futureTime
                 shouldScheduleNotifications = true
+                shouldScheduleWidgetRefresh = true
             }
         }
         
-        // Schedule notifications outside of the state update
+        if (shouldCancelActiveTimer) {
+            AlarmScheduler.cancelNotifications(context)
+            AlarmScheduler.cancelWidgetRefresh(context)
+        }
         if (shouldScheduleNotifications && targetTimeMillis > 0) {
             AlarmScheduler.scheduleNotifications(context, targetTimeMillis)
+        }
+        if (shouldScheduleWidgetRefresh && targetTimeMillis > 0) {
+            AlarmScheduler.scheduleWidgetRefresh(context, targetTimeMillis)
         }
         
         // Update the widget

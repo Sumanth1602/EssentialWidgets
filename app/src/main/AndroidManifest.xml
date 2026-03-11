@@ -51,6 +51,7 @@
             <intent-filter>
                 <action android:name="com.example.essentialwidgets.ACTION_REMINDER" />
                 <action android:name="com.example.essentialwidgets.ACTION_TARGET_TIME" />
+                <action android:name="com.example.essentialwidgets.ACTION_WIDGET_REFRESH" />
             </intent-filter>
         </receiver>
         
