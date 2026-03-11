@@ -32,6 +32,8 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
@@ -48,6 +50,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlin.math.ceil
 
 class NowTimeWidget : GlanceAppWidget() {
     
@@ -87,6 +90,8 @@ private fun NowTimeWidgetContent() {
     val calculatedTimeMillis = prefs[NowTimeWidget.CALCULATED_TIME_KEY] ?: 0L
     val currentTimeMillis = prefs[NowTimeWidget.CURRENT_TIME_KEY] ?: 0L
     val hasCalculatedTime = calculatedTimeMillis > 0L
+    val nowMillis = System.currentTimeMillis()
+    
     // Read from widget state, fallback to SharedPreferences
     val durationHours = prefs[NowTimeWidget.DURATION_HOURS_KEY] ?: WidgetPreferences.getHours(context)
     val durationMinutes = prefs[NowTimeWidget.DURATION_MINUTES_KEY] ?: WidgetPreferences.getMinutes(context)
@@ -106,10 +111,18 @@ private fun NowTimeWidgetContent() {
         ).format(formatter)
     } else ""
     
+    val totalDurationMillis = (calculatedTimeMillis - currentTimeMillis).coerceAtLeast(1L)
+    val remainingMillis = (calculatedTimeMillis - nowMillis).coerceAtLeast(0L)
+    val elapsedMillis = (nowMillis - currentTimeMillis).coerceIn(0L, totalDurationMillis)
+    val isComplete = hasCalculatedTime && remainingMillis == 0L
+    val progressFraction = if (hasCalculatedTime) {
+        (elapsedMillis.toFloat() / totalDurationMillis.toFloat()).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    
     // Calculate time left
     val timeLeftText = if (hasCalculatedTime) {
-        val now = System.currentTimeMillis()
-        val remainingMillis = calculatedTimeMillis - now
         if (remainingMillis > 0) {
             val remainingMinutes = remainingMillis / (60 * 1000)
             val hours = remainingMinutes / 60
@@ -150,7 +163,9 @@ private fun NowTimeWidgetContent() {
             ResultContent(
                 calculatedTime = calculatedTime,
                 currentTime = currentTime,
-                timeLeftText = timeLeftText
+                timeLeftText = timeLeftText,
+                progressFraction = progressFraction,
+                isComplete = isComplete
             )
         } else {
             IdleContent(durationText = durationText)
@@ -165,7 +180,6 @@ private fun IdleContent(durationText: String) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left side - description text
         Box(
             modifier = GlanceModifier.defaultWeight(),
             contentAlignment = Alignment.Center
@@ -182,7 +196,6 @@ private fun IdleContent(durationText: String) {
         
         Spacer(modifier = GlanceModifier.width(8.dp))
         
-        // Right side - NOW button
         Box(
             modifier = GlanceModifier
                 .cornerRadius(24.dp)
@@ -218,63 +231,107 @@ private fun IdleContent(durationText: String) {
 private fun ResultContent(
     calculatedTime: String,
     currentTime: String,
-    timeLeftText: String
+    timeLeftText: String,
+    progressFraction: Float,
+    isComplete: Boolean
 ) {
-    Row(
+    Column(
         modifier = GlanceModifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Left - "Ready at"
-        Text(
-            text = "Ready at",
-            style = TextStyle(
-                color = GlanceTheme.colors.onSurface,
-                fontSize = 13.sp
-            )
-        )
-        
-        Spacer(modifier = GlanceModifier.width(12.dp))
-        
-        // Center - Time pill
-        Box(
-            modifier = GlanceModifier
-                .cornerRadius(20.dp)
-                .background(GlanceTheme.colors.surfaceVariant)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = calculatedTime,
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
+            Column(
+                modifier = GlanceModifier.defaultWeight(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (isComplete) "Done at" else "Ready at",
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                        fontSize = 10.sp
+                    )
                 )
-            )
+                Spacer(modifier = GlanceModifier.height(4.dp))
+                Box(
+                    modifier = GlanceModifier
+                        .cornerRadius(18.dp)
+                        .background(GlanceTheme.colors.surfaceVariant)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = calculatedTime,
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onSurfaceVariant,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+            
+            Spacer(modifier = GlanceModifier.width(10.dp))
+            
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = timeLeftText,
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurface,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Text(
+                    text = "From $currentTime",
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                        fontSize = 10.sp
+                    )
+                )
+            }
         }
         
-        Spacer(modifier = GlanceModifier.width(12.dp))
-        
-        // Right - "From X:XX" and "Xh left"
-        Column(
-            horizontalAlignment = Alignment.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "From $currentTime",
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                    fontSize = 11.sp
-                )
+        Spacer(modifier = GlanceModifier.height(8.dp))
+        ProgressBar(progressFraction = progressFraction, isComplete = isComplete)
+    }
+}
+
+@Composable
+private fun ProgressBar(progressFraction: Float, isComplete: Boolean) {
+    val segmentCount = 12
+    val filledSegments = when {
+        isComplete -> segmentCount
+        progressFraction <= 0f -> 0
+        else -> ceil(progressFraction * segmentCount).toInt().coerceIn(0, segmentCount)
+    }
+    
+    Row(
+        modifier = GlanceModifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        repeat(segmentCount) { index ->
+            Box(
+                modifier = GlanceModifier
+                    .defaultWeight()
+                    .height(6.dp)
+                    .cornerRadius(99.dp)
+                    .background(
+                        if (index < filledSegments) GlanceTheme.colors.primary
+                        else GlanceTheme.colors.surfaceVariant
+                    )
             )
-            Text(
-                text = timeLeftText,
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                    fontSize = 11.sp
-                )
-            )
+            if (index < segmentCount - 1) {
+                Spacer(modifier = GlanceModifier.width(3.dp))
+            }
         }
     }
 }
@@ -298,20 +355,14 @@ class NowTimeActionCallback : ActionCallback {
             val currentShowResult = prefs[NowTimeWidget.SHOW_RESULT_KEY] ?: false
             
             if (currentShowResult) {
-                // Reset to idle state
                 prefs[NowTimeWidget.SHOW_RESULT_KEY] = false
                 prefs[NowTimeWidget.CALCULATED_TIME_KEY] = 0L
                 prefs[NowTimeWidget.CURRENT_TIME_KEY] = 0L
                 shouldCancelActiveTimer = true
             } else {
-                // Get duration from widget state (set during provideGlance)
                 val hours = prefs[NowTimeWidget.DURATION_HOURS_KEY] ?: WidgetPreferences.getHours(context)
                 val minutes = prefs[NowTimeWidget.DURATION_MINUTES_KEY] ?: WidgetPreferences.getMinutes(context)
-                
-                // Calculate duration in milliseconds
                 val durationMillis = ((hours * 60L) + minutes) * 60L * 1000L
-                
-                // Calculate and show result
                 val now = System.currentTimeMillis()
                 val futureTime = now + durationMillis
                 
@@ -319,7 +370,6 @@ class NowTimeActionCallback : ActionCallback {
                 prefs[NowTimeWidget.CALCULATED_TIME_KEY] = futureTime
                 prefs[NowTimeWidget.CURRENT_TIME_KEY] = now
                 
-                // Schedule alarms
                 targetTimeMillis = futureTime
                 shouldScheduleNotifications = true
                 shouldScheduleWidgetRefresh = true
@@ -337,7 +387,6 @@ class NowTimeActionCallback : ActionCallback {
             AlarmScheduler.scheduleWidgetRefresh(context, targetTimeMillis)
         }
         
-        // Update the widget
         NowTimeWidget().update(context, glanceId)
     }
 }
